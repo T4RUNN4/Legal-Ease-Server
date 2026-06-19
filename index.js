@@ -29,10 +29,29 @@ const client = new MongoClient(URI, {
 async function run() {
   try {
     const db = client.db("legal-ease");
-    // collection = db.collection("ideas");
+    const lawyersCollection = db.collection("lawyersCollection")
 
     app.get("/", (req, res) => {
         res.send("App is running");
+    });
+
+    app.get("/lawyers/:id", async (req, res) => {
+      const { id } = req.params;
+      const lawyer = await lawyersCollection.findOne({ user: id });
+      res.json(lawyer);
+    });
+
+
+    app.put("/lawyers/update-profile", async (req, res) => {
+      const lawyerData = req.body;
+
+      await lawyersCollection.updateOne(
+        { user: lawyerData.user }, 
+        { $set: lawyerData }, 
+        { upsert: true }
+      );
+
+      res.send({ success: true });
     })
 
     app.listen(PORT, () => {
