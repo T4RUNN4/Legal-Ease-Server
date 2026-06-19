@@ -43,6 +43,12 @@ async function run() {
       res.send(lawyers);
     })
 
+    //Top Lawyers
+    app.get("/lawyers/top", async (req, res) => {
+      const lawyers = await lawyersCollection.find({}).sort({ gotHired: -1 }).limit(3).toArray();
+      res.send(lawyers)
+    })
+
     // All Lawyers
     app.get("/lawyers/list", async (req, res) => {
       const lawyers = await lawyersCollection.find().toArray();
