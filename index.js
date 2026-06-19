@@ -35,9 +35,17 @@ async function run() {
         res.send("App is running");
     });
 
+    // All Lawyers
     app.get("/lawyers/list", async (req, res) => {
       const lawyers = await lawyersCollection.find().toArray();
       res.json(lawyers);
+    });
+
+    //Specific Lawyers
+    app.get("/lawyers/list/:id", async (req, res) => {
+      const { id } = req.params;
+      const lawyer = await lawyersCollection.findOne({ _id: new ObjectId(id) });
+      res.json(lawyer);
     });
 
     // Find lawyer profile that belongs to user
