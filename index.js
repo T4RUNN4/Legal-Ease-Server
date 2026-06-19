@@ -35,13 +35,19 @@ async function run() {
         res.send("App is running");
     });
 
+    app.get("/lawyers/list", async (req, res) => {
+      const lawyers = await lawyersCollection.find().toArray();
+      res.json(lawyers);
+    });
+
+    // Find lawyer profile that belongs to user
     app.get("/lawyers/:id", async (req, res) => {
       const { id } = req.params;
       const lawyer = await lawyersCollection.findOne({ user: id });
       res.json(lawyer);
     });
 
-
+    // Updated Lawyers Profile
     app.put("/lawyers/update-profile", async (req, res) => {
       const lawyerData = req.body;
 
