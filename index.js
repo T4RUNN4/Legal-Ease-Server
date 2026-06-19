@@ -35,6 +35,14 @@ async function run() {
         res.send("App is running");
     });
 
+    // Random Lawyers
+    app.get("/lawyers/random", async (req, res) => {
+      const lawyers = await lawyersCollection.aggregate([
+        { $sample: {size: 6 } }
+      ]).toArray();
+      res.send(lawyers);
+    })
+
     // All Lawyers
     app.get("/lawyers/list", async (req, res) => {
       const lawyers = await lawyersCollection.find().toArray();
