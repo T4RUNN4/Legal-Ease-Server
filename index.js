@@ -107,6 +107,31 @@ async function run() {
       res.json(transactions);
     });
 
+    app.get("/admin/stats", async (req, res) => {
+      const totalUser = await userCollection.countDocuments();
+      const totalLawyer = await userCollection.countDocuments({ role: "lawyer" });
+      const totalHires = await hiringCollection.countDocuments({ status: "paid" });
+
+      const revenueResult = await hiringCollection.aggregate([
+        {
+          $match: {
+            status: "paid",
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: "$fee",
+            }
+          }
+        }
+      ]).toArray();
+
+      const totalRevenue = revenueResult[0]?.totalRevenue || 0;
+      res.send({ totalHires, totalLawyer, totalRevenue, totalUser })
+    })
+
     app.get("/checkout/:id", async (req, res) => {
       const { id } = req.params;
 
