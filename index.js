@@ -100,6 +100,13 @@ async function run() {
       res.json(hiring);
     });
 
+    app.get("/transactions", async (req, res) => {
+      const transactions = await hiringCollection
+        .find({ status: "paid" })
+        .toArray();
+      res.json(transactions);
+    });
+
     app.get("/checkout/:id", async (req, res) => {
       const { id } = req.params;
 
