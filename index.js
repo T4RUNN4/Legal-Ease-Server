@@ -33,10 +33,16 @@ async function run() {
     const db = client.db("legal-ease");
     const lawyersCollection = db.collection("lawyersCollection");
     const hiringCollection = db.collection("hiringCollection");
+    const userCollection = db.collection("user");
 
     app.get("/", (req, res) => {
       res.send("App is running");
     });
+
+    app.get("/admin/users", async (req, res) => {
+      const users = await userCollection.find().toArray();
+      res.json(users);
+    })
 
     // Random Lawyers
     app.get("/lawyers/random", async (req, res) => {
