@@ -44,6 +44,13 @@ async function run() {
       res.json(users);
     })
 
+    app.get("/user/:id", async (req, res) => {
+      const { id } = req.params;
+      const user = await userCollection.findOne({ _id: new ObjectId(id)});
+
+      res.json(user);
+    })
+
     // Random Lawyers
     app.get("/lawyers/random", async (req, res) => {
       const lawyers = await lawyersCollection
@@ -184,6 +191,23 @@ async function run() {
 
       res.send({ success: true });
     });
+
+    app.put("/users/update-profile", async (req, res) => {
+      const { id, name, email, image } = req.body;
+
+      const result = await userCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            name,
+            email,
+            image,
+          },
+        },
+      );
+
+      res.json(result);
+    })
 
     app.patch("/hiring/update-status/:id", async (req, res) => {
       const { id } = req.params;
