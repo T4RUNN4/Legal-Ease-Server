@@ -42,14 +42,14 @@ async function run() {
     app.get("/admin/users", async (req, res) => {
       const users = await userCollection.find().toArray();
       res.json(users);
-    })
+    });
 
     app.get("/user/:id", async (req, res) => {
       const { id } = req.params;
-      const user = await userCollection.findOne({ _id: new ObjectId(id)});
+      const user = await userCollection.findOne({ _id: new ObjectId(id) });
 
       res.json(user);
-    })
+    });
 
     // Random Lawyers
     app.get("/lawyers/random", async (req, res) => {
@@ -77,8 +77,25 @@ async function run() {
 
     // All Lawyers
     app.get("/lawyers/list", async (req, res) => {
-      const lawyers = await lawyersCollection.find().toArray();
-      res.json(lawyers);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 12;
+
+      const skip = (page - 1) * limit;
+
+      const lawyers = await lawyersCollection
+        .find()
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      const total = await lawyersCollection.countDocuments();
+
+      res.json({
+        lawyers,
+        total,
+        page,
+        totalPage: Math.ceil(total/limit),
+      });
     });
 
     //Specific Lawyers
@@ -116,28 +133,34 @@ async function run() {
 
     app.get("/admin/stats", async (req, res) => {
       const totalUser = await userCollection.countDocuments();
-      const totalLawyer = await userCollection.countDocuments({ role: "lawyer" });
-      const totalHires = await hiringCollection.countDocuments({ status: "paid" });
+      const totalLawyer = await userCollection.countDocuments({
+        role: "lawyer",
+      });
+      const totalHires = await hiringCollection.countDocuments({
+        status: "paid",
+      });
 
-      const revenueResult = await hiringCollection.aggregate([
-        {
-          $match: {
-            status: "paid",
+      const revenueResult = await hiringCollection
+        .aggregate([
+          {
+            $match: {
+              status: "paid",
+            },
           },
-        },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: {
-              $sum: "$fee",
-            }
-          }
-        }
-      ]).toArray();
+          {
+            $group: {
+              _id: null,
+              totalRevenue: {
+                $sum: "$fee",
+              },
+            },
+          },
+        ])
+        .toArray();
 
       const totalRevenue = revenueResult[0]?.totalRevenue || 0;
-      res.send({ totalHires, totalLawyer, totalRevenue, totalUser })
-    })
+      res.send({ totalHires, totalLawyer, totalRevenue, totalUser });
+    });
 
     app.get("/checkout/:id", async (req, res) => {
       const { id } = req.params;
@@ -207,7 +230,7 @@ async function run() {
       );
 
       res.json(result);
-    })
+    });
 
     app.patch("/hiring/update-status/:id", async (req, res) => {
       const { id } = req.params;
@@ -246,21 +269,21 @@ async function run() {
       const { role } = req.body;
 
       const result = await userCollection.updateOne(
-        { _id: new ObjectId(id)},
-        { $set: { role }},
-      )
+        { _id: new ObjectId(id) },
+        { $set: { role } },
+      );
 
-      res.json(result)
-    })
+      res.json(result);
+    });
 
     app.delete("/admin/users/delete/:id", async (req, res) => {
       const { id } = req.params;
       const result = await userCollection.deleteOne({
-        _id: new ObjectId(id)
-      })
+        _id: new ObjectId(id),
+      });
 
-      res.json(result)
-    })
+      res.json(result);
+    });
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
