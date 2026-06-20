@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
@@ -42,19 +42,19 @@ async function run() {
         { $sample: {size: 6 } }
       ]).toArray();
       res.send(lawyers);
-    })
+    });
 
     //Top Lawyers
     app.get("/lawyers/top", async (req, res) => {
       const lawyers = await lawyersCollection.find({}).sort({ gotHired: -1 }).limit(3).toArray();
       res.send(lawyers)
-    })
+    });
 
     app.get("/lawyers/find/:id", async (req, res) => {
       const { id } = req.params;
       const lawyer = await lawyersCollection.findOne({ user: id});
       res.send(lawyer);
-    })
+    });
 
     // All Lawyers
     app.get("/lawyers/list", async (req, res) => {
@@ -80,13 +80,13 @@ async function run() {
       const { id } = req.params;
       const hiring = await hiringCollection.find({ userId: id }).toArray();
       res.json(hiring);
-    })
+    });
 
     app.get("/lawyer/hiring-history/:id", async(req, res) => {
       const { id } = req.params;
       const hiring = await hiringCollection.find({ lawyerId: id }).toArray();
       res.json(hiring);
-    })
+    });
 
     app.post("/hiring", async (req, res) => {
       const hireData = req.body;
@@ -106,7 +106,19 @@ async function run() {
       );
 
       res.send({ success: true });
-    })
+    });
+
+    app.patch("/hiring/update-status/:id", async (req, res) => {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const result = await hiringCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { status, }, }
+      );
+
+      res.send(result);
+    });
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
