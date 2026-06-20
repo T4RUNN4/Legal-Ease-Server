@@ -185,6 +185,15 @@ async function run() {
       res.json({ success: true });
     });
 
+    app.delete("/admin/users/delete/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await userCollection.deleteOne({
+        _id: new ObjectId(id)
+      })
+
+      res.json(result)
+    })
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
