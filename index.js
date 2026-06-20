@@ -185,6 +185,18 @@ async function run() {
       res.json({ success: true });
     });
 
+    app.patch("/admin/user/update/:id", async (req, res) => {
+      const { id } = req.params;
+      const { role } = req.body;
+
+      const result = await userCollection.updateOne(
+        { _id: new ObjectId(id)},
+        { $set: { role }},
+      )
+
+      res.json(result)
+    })
+
     app.delete("/admin/users/delete/:id", async (req, res) => {
       const { id } = req.params;
       const result = await userCollection.deleteOne({
