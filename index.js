@@ -79,16 +79,26 @@ async function run() {
     app.get("/lawyers/list", async (req, res) => {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 12;
-
       const skip = (page - 1) * limit;
 
+       const { search, specialization, maxFee } = req.query;
+       const query = {};
+
+       if (search) {
+         query.name = { $regex: search, $options: "i" };
+       }
+
+       if (specialization) {
+         query.specialization = specialization;
+       }
+
       const lawyers = await lawyersCollection
-        .find()
+        .find(query)
         .skip(skip)
         .limit(limit)
         .toArray();
 
-      const total = await lawyersCollection.countDocuments();
+      const total = await lawyersCollection.countDocuments(query);
 
       res.json({
         lawyers,
