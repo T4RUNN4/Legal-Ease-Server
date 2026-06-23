@@ -212,6 +212,22 @@ async function run() {
       res.json(result);
     });
 
+    app.post("/users/update-role/:id", async (req, res) => {
+      const { id } = req.params;
+      const { userRole } = req.body;
+
+      const result = await userCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            role: userRole,
+          },
+        },
+      );
+
+      return res.json();
+    });
+
     // Updated Lawyers Profile
     app.put("/lawyers/update-profile", async (req, res) => {
       const lawyerData = req.body;
