@@ -81,16 +81,16 @@ async function run() {
       const limit = parseInt(req.query.limit) || 12;
       const skip = (page - 1) * limit;
 
-       const { search, specialization, maxFee } = req.query;
-       const query = {};
+      const { search, specialization, maxFee } = req.query;
+      const query = {};
 
-       if (search) {
-         query.name = { $regex: search, $options: "i" };
-       }
+      if (search) {
+        query.name = { $regex: search, $options: "i" };
+      }
 
-       if (specialization) {
-         query.specialization = specialization;
-       }
+      if (specialization) {
+        query.specialization = specialization;
+      }
 
       const lawyers = await lawyersCollection
         .find(query)
@@ -104,7 +104,7 @@ async function run() {
         lawyers,
         total,
         page,
-        totalPage: Math.ceil(total/limit),
+        totalPage: Math.ceil(total / limit),
       });
     });
 
@@ -179,10 +179,6 @@ async function run() {
         _id: new ObjectId(id),
       });
 
-      if (!hiringData) {
-        return res.status(404).json({ error: "Not found" });
-      }
-
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         line_items: [
@@ -192,17 +188,54 @@ async function run() {
               product_data: {
                 name: `Hiring ${hiringData.lawyerName}`,
               },
-              unit_amount: hiringData.fee * 100,
+              unit_amount: Math.round(Number(hiringData.fee) * 100),
             },
             quantity: 1,
           },
         ],
-
+        metadata: {
+          hiringId: id,
+        },
         success_url: `${process.env.CLIENT_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}&hiringId=${id}`,
         cancel_url: `${process.env.CLIENT_URL}/checkout/cancel`,
       });
 
       return res.json({ url: session.url });
+    });
+
+    app.get("/verify-payment", async (req, res) => {
+      const { session_id, hiringId } = req.query;
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+
+      const updateResult = await hiringCollection.updateOne(
+        { _id: new ObjectId(hiringId) },
+        {
+          $set: {
+            status: "paid",
+            stripeSessionId: session_id,
+            transactionId: session.payment_intent,
+            paidAt: new Date(),
+          },
+        },
+      );
+
+      const lawyerId = hiringCollection.lawyerId;
+      const userId = hiringCollection.userId;
+
+      await lawyersCollection.updateOne(
+        { _id: new ObjectId(lawyerId) },
+        {
+          $addToSet: { client: userId },
+        },
+      );
+
+      return res.json({
+        success: true,
+        paymentDetails: {
+          transactionId: session.payment_intent,
+          amountPaid: session.amount_total / 100,
+        },
+      });
     });
 
     app.post("/hiring", async (req, res) => {
@@ -270,25 +303,24 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/mark-paid/:id", async (req, res) => {
-      const { id } = req.params;
+    // app.patch("/mark-paid/:id", async (req, res) => {
+    //   const { id } = req.params;
 
-      await hiringCollection.updateOne(
-        { _id: new ObjectId(id) },
-        {
-          $set: {
-            status: "paid",
-            transaction: {
-              transactionId: "TEST-" + Date.now(),
-              amount: "from-hiring-record",
-              transactionDate: new Date(),
-            },
-          },
-        },
-      );
+    //   await hiringCollection.updateOne(
+    //     { _id: new ObjectId(id) },
+    //     {
+    //       $set: {
+    //         status: "paid",
+    //         transaction: {
+    //           transactionId: "TEST-" + Date.now(),
+    //           transactionDate: new Date(),
+    //         },
+    //       },
+    //     },
+    //   );
 
-      res.json({ success: true });
-    });
+    //   res.json({ success: true });
+    // });
 
     app.patch("/admin/user/update/:id", async (req, res) => {
       const { id } = req.params;
