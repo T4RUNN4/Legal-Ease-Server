@@ -328,6 +328,22 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/comments/update/:id", async (req, res) => {
+      const { id } = req.params;
+      const { comment } = req.body;
+
+      const result = await commentsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: 
+          { 
+            comment: comment 
+          } 
+        }
+      );
+
+      res.json(result); 
+    })
+
     app.patch("/admin/user/update/:id", async (req, res) => {
       const { id } = req.params;
       const { role } = req.body;
