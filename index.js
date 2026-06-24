@@ -34,6 +34,7 @@ async function run() {
     const lawyersCollection = db.collection("lawyersCollection");
     const hiringCollection = db.collection("hiringCollection");
     const userCollection = db.collection("user");
+    const commentsCollection = db.collection("comments")
 
     app.get("/", (req, res) => {
       res.send("App is running");
@@ -246,6 +247,14 @@ async function run() {
 
       res.json(result);
     });
+
+    app.post("/commments", async (req, res) => {
+      const comment = req.body;
+      const result = await commentsCollection.insertOne(comment);
+
+
+      res.json(result)
+    })
 
     app.post("/users/update-role/:id", async (req, res) => {
       const { id } = req.params;
