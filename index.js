@@ -328,25 +328,6 @@ async function run() {
       res.send(result);
     });
 
-    // app.patch("/mark-paid/:id", async (req, res) => {
-    //   const { id } = req.params;
-
-    //   await hiringCollection.updateOne(
-    //     { _id: new ObjectId(id) },
-    //     {
-    //       $set: {
-    //         status: "paid",
-    //         transaction: {
-    //           transactionId: "TEST-" + Date.now(),
-    //           transactionDate: new Date(),
-    //         },
-    //       },
-    //     },
-    //   );
-
-    //   res.json({ success: true });
-    // });
-
     app.patch("/admin/user/update/:id", async (req, res) => {
       const { id } = req.params;
       const { role } = req.body;
@@ -358,6 +339,15 @@ async function run() {
 
       res.json(result);
     });
+
+    app.delete("/comments/delete/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await commentsCollection.deleteOne({
+        _id: new ObjectId(id),
+      })
+
+      res.json(result);
+    })
 
     app.delete("/admin/users/delete/:id", async (req, res) => {
       const { id } = req.params;
