@@ -45,6 +45,20 @@ async function run() {
       res.json(users);
     });
 
+    app.get("/comments/lawyer/:id", async (req, res) => {
+      const { id } = req.params;
+      const comments = await commentsCollection.find({ lawyerId: id }).toArray();
+
+      res.json(comments)
+    })
+
+    app.get("/comments/user/:id", async (req, res) => {
+      const { id } = req.params;
+      const comments = await commentsCollection.find({ userId: id }).toArray();
+
+      res.json(comments)
+    })
+
     app.get("/user/:id", async (req, res) => {
       const { id } = req.params;
       const user = await userCollection.findOne({ _id: new ObjectId(id) });
