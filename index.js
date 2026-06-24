@@ -206,8 +206,8 @@ async function run() {
     app.get("/verify-payment", async (req, res) => {
       const { session_id, hiringId } = req.query;
       const session = await stripe.checkout.sessions.retrieve(session_id);
-
-      const updateResult = await hiringCollection.updateOne(
+      
+      const updateResult = await hiringCollection.findOneAndUpdate(
         { _id: new ObjectId(hiringId) },
         {
           $set: {
@@ -217,12 +217,13 @@ async function run() {
             paidAt: new Date(),
           },
         },
+        { returnDocument: "after" },
       );
 
-      const lawyerId = hiringCollection.lawyerId;
-      const userId = hiringCollection.userId;
+      const lawyerId = updateResult.lawyerId;
+      const userId = updateResult.userId;
 
-      await lawyersCollection.updateOne(
+      const updateClient = await lawyersCollection.updateOne(
         { _id: new ObjectId(lawyerId) },
         {
           $addToSet: { client: userId },
@@ -235,6 +236,7 @@ async function run() {
           transactionId: session.payment_intent,
           amountPaid: session.amount_total / 100,
         },
+        updateClient,
       });
     });
 
