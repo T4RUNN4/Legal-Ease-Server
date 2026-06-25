@@ -161,32 +161,16 @@ async function run() {
 
     app.get("/admin/stats", async (req, res) => {
       const totalUser = await userCollection.countDocuments();
-      const totalLawyer = await userCollection.countDocuments({
-        role: "lawyer",
+      const totalLawyer = await lawyersCollection.countDocuments({
+        publishingFee: "paid",
       });
       const totalHires = await hiringCollection.countDocuments({
         status: "paid",
       });
 
-      const revenueResult = await hiringCollection
-        .aggregate([
-          {
-            $match: {
-              status: "paid",
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              totalRevenue: {
-                $sum: "$fee",
-              },
-            },
-          },
-        ])
-        .toArray();
+      const revenueResult = await lawyersCollection.countDocuments({ publishingFee: "paid" });
+      const totalRevenue = revenueResult * 500;
 
-      const totalRevenue = revenueResult[0]?.totalRevenue || 0;
       res.send({ totalHires, totalLawyer, totalRevenue, totalUser });
     });
 
