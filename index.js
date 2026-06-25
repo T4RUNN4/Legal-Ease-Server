@@ -34,7 +34,7 @@ async function run() {
     const lawyersCollection = db.collection("lawyersCollection");
     const hiringCollection = db.collection("hiringCollection");
     const userCollection = db.collection("user");
-    const commentsCollection = db.collection("comments")
+    const commentsCollection = db.collection("comments");
 
     app.get("/", (req, res) => {
       res.send("App is running");
@@ -47,17 +47,19 @@ async function run() {
 
     app.get("/comments/lawyer/:id", async (req, res) => {
       const { id } = req.params;
-      const comments = await commentsCollection.find({ lawyerId: id }).toArray();
+      const comments = await commentsCollection
+        .find({ lawyerId: id })
+        .toArray();
 
-      res.json(comments)
-    })
+      res.json(comments);
+    });
 
     app.get("/comments/user/:id", async (req, res) => {
       const { id } = req.params;
       const comments = await commentsCollection.find({ userId: id }).toArray();
 
-      res.json(comments)
-    })
+      res.json(comments);
+    });
 
     app.get("/user/:id", async (req, res) => {
       const { id } = req.params;
@@ -97,7 +99,9 @@ async function run() {
       const skip = (page - 1) * limit;
 
       const { search, specialization, maxFee } = req.query;
-      const query = {};
+      const query = {
+        publishingFee: "paid",
+      };
 
       if (search) {
         query.name = { $regex: search, $options: "i" };
@@ -133,13 +137,17 @@ async function run() {
     // Find lawyer profile that belongs to user
     app.get("/lawyers/:id", async (req, res) => {
       const { id } = req.params;
-      const lawyer = await lawyersCollection.findOne({ user: id });
-      res.json(lawyer);
+      const lawyerProfile = await lawyersCollection
+        .find({ user: id })
+        .toArray();
+
+      res.json(lawyerProfile);
     });
 
     app.get("/user/hiring-history/:id", async (req, res) => {
       const { id } = req.params;
       const hiring = await hiringCollection.find({ userId: id }).toArray();
+
       res.json(hiring);
     });
 
@@ -221,7 +229,7 @@ async function run() {
     app.get("/verify-payment", async (req, res) => {
       const { session_id, hiringId } = req.query;
       const session = await stripe.checkout.sessions.retrieve(session_id);
-      
+
       const updateResult = await hiringCollection.findOneAndUpdate(
         { _id: new ObjectId(hiringId) },
         {
@@ -262,13 +270,19 @@ async function run() {
       res.json(result);
     });
 
+    app.post("/lawyer/add-new", async (req, res) => {
+      const lawyerData = req.body;
+      const result = await lawyersCollection.insertOne(lawyerData);
+
+      res.json(result);
+    })
+
     app.post("/commments", async (req, res) => {
       const comment = req.body;
       const result = await commentsCollection.insertOne(comment);
 
-
-      res.json(result)
-    })
+      res.json(result);
+    });
 
     app.post("/users/update-role/:id", async (req, res) => {
       const { id } = req.params;
@@ -334,15 +348,15 @@ async function run() {
 
       const result = await commentsCollection.updateOne(
         { _id: new ObjectId(id) },
-        { $set: 
-          { 
-            comment: comment 
-          } 
-        }
+        {
+          $set: {
+            comment: comment,
+          },
+        },
       );
 
-      res.json(result); 
-    })
+      res.json(result);
+    });
 
     app.patch("/admin/user/update/:id", async (req, res) => {
       const { id } = req.params;
@@ -360,10 +374,10 @@ async function run() {
       const { id } = req.params;
       const result = await commentsCollection.deleteOne({
         _id: new ObjectId(id),
-      })
+      });
 
       res.json(result);
-    })
+    });
 
     app.delete("/admin/users/delete/:id", async (req, res) => {
       const { id } = req.params;
