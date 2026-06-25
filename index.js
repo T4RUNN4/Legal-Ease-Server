@@ -86,12 +86,6 @@ async function run() {
       res.send(lawyers);
     });
 
-    app.get("/lawyers/find/:id", async (req, res) => {
-      const { id } = req.params;
-      const lawyer = await lawyersCollection.findOne({ user: id });
-      res.send(lawyer);
-    });
-
     // All Lawyers
     app.get("/lawyers/list", async (req, res) => {
       const page = parseInt(req.query.page) || 1;
@@ -154,6 +148,7 @@ async function run() {
     app.get("/lawyer/hiring-history/:id", async (req, res) => {
       const { id } = req.params;
       const hiring = await hiringCollection.find({ lawyerId: id }).toArray();
+
       res.json(hiring);
     });
 
@@ -243,7 +238,7 @@ async function run() {
         { returnDocument: "after" },
       );
 
-      const lawyerId = updateResult.lawyerId;
+      const lawyerId = updateResult.lawyerProfileId;
       const userId = updateResult.userId;
 
       const updateClient = await lawyersCollection.updateOne(
@@ -263,6 +258,64 @@ async function run() {
       });
     });
 
+    app.get("/checkout/lawyer/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const lawyer = await lawyersCollection.findOne({
+        _id: new ObjectId(id),
+      });
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `Lawyer Listing Fee - ${lawyer.name}`,
+              },
+              unit_amount: 500 * 100,
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          lawyerId: id,
+          paymentType: "lawyer",
+        },
+        success_url: `${process.env.CLIENT_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}&lawyerId=${id}`,
+        cancel_url: `${process.env.CLIENT_URL}/checkout/cancel`,
+      });
+
+      return res.json({ url: session.url });
+    });
+
+    app.get("/verify-lawyer", async (req, res) => {
+      const { session_id, lawyerId } = req.query;
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+
+      const updateResult = await lawyersCollection.findOneAndUpdate(
+        { _id: new ObjectId(lawyerId) },
+        {
+          $set: {
+            publishingFee: "paid",
+            publishingFeestripeSessionId: session_id,
+            publishingFeetransactionId: session.payment_intent,
+            publishingFeepaidAt: new Date(),
+          },
+        },
+        { returnDocument: "after" },
+      );
+
+      return res.json({
+        success: true,
+        paymentDetails: {
+          transactionId: session.payment_intent,
+          amountPaid: session.amount_total / 100,
+        },
+      });
+    });
+
     app.post("/hiring", async (req, res) => {
       const hireData = req.body;
       const result = await hiringCollection.insertOne(hireData);
@@ -275,7 +328,7 @@ async function run() {
       const result = await lawyersCollection.insertOne(lawyerData);
 
       res.json(result);
-    })
+    });
 
     app.post("/commments", async (req, res) => {
       const comment = req.body;
