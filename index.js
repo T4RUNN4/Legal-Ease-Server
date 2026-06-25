@@ -425,6 +425,15 @@ async function run() {
       res.json(result);
     });
 
+    app.delete("/lawyer/profile/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await lawyersCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
+      res.json(result)
+    })
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
