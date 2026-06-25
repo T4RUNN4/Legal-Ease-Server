@@ -379,6 +379,24 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/lawyer/legal-profile/:id", async (req, res) => {
+      const { id } = req.params;
+      const { specialization, fee, summary } = req.body;
+
+      const result = await lawyersCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            fee: fee,
+            specialization: specialization,
+            summary: summary
+          }
+        }
+      );
+
+      res.json(result);
+    })
+
     app.patch("/comments/update/:id", async (req, res) => {
       const { id } = req.params;
       const { comment } = req.body;
